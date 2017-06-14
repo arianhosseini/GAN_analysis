@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ### JetBrains template
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio
 
@@ -29,6 +30,8 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 ### Python template
+=======
+>>>>>>> 6ba2f870d6bd8be435658b56ee662bb32234d08c
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -36,7 +39,10 @@ __pycache__/
 
 # C extensions
 *.so
+<<<<<<< HEAD
 *.o
+=======
+>>>>>>> 6ba2f870d6bd8be435658b56ee662bb32234d08c
 
 # Distribution / packaging
 .Python
@@ -52,6 +58,10 @@ lib64/
 parts/
 sdist/
 var/
+<<<<<<< HEAD
+=======
+wheels/
+>>>>>>> 6ba2f870d6bd8be435658b56ee662bb32234d08c
 *.egg-info/
 .installed.cfg
 *.egg
@@ -74,7 +84,9 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
-*,cover
+
+*.cover
+.hypothesis/
 
 # Translations
 *.mo
@@ -83,11 +95,19 @@ coverage.xml
 # Django stuff:
 *.log
 
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
 # Sphinx documentation
 docs/_build/
 
 # PyBuilder
 target/
+
 
 # Created by .ignore support plugin (hsz.mobi)
 
@@ -95,6 +115,39 @@ target/
 .DS_Store
 
 reload
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# celery beat schedule file
+celerybeat-schedule
+
+# SageMath parsed files
+*.sage.py
+
+# dotenv
+.env
+
+# virtualenv
+.venv
+venv/
+ENV/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
 
 res/*.png
 res/svds/*.png
