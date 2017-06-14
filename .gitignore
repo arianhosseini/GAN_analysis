@@ -152,4 +152,6 @@ ENV/
 res/*.png
 res/svds/*.png
 res/svds/*.npy
+!res/.gitkeep
+!res/svds/.gitkeep 
 code.pieces.py
