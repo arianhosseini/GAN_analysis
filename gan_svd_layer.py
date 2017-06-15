@@ -20,15 +20,15 @@ cmap = LinearSegmentedColormap.from_list(
                (1.0, '#61a7d3')])
 batch_size = 30
 
-reg_term_0 = 0.0001
-reg_term_1 = 0.0001
-reg_term_2 = 0.0001
-reg_term_3 = 0.0001
-reg_term_4 = 0.000001
-reg_term_5 = 0.000001
+w_01_u_reg_term = 0.1
+w_01_v_reg_term = 0.0001
+w_12_u_reg_term = 0.1
+w_12_v_reg_term = 0.1
+sv1_reg_term = 0.001
+sv2_reg_term = 0.001
 reg_term_6 = 0.01
 
-decomposition_freq = 10
+decomposition_freq = 5
 
 def get_data():
     N = 10 * batch_size
@@ -134,21 +134,19 @@ def gan():
         T.mean(T.nnet.binary_crossentropy(
             pred_fake, T.alloc(0, batch_size, 1))))
 
-    w_01_uTu = T.dot(p_d[0].T,p_d[0])
-    w_01_vTv = T.dot(p_d[2].T,p_d[2])
-    d_cost += theano_print(reg_term_0 * (T.sum(w_01_uTu - T.identity_like(w_01_uTu)) ** 2), 'u_ortho', True)
-    d_cost += theano_print(reg_term_1 * (T.sum(w_01_vTv - T.identity_like(w_01_vTv)) ** 2), 'v_ortho', True)
-
-    w_12_uTu = T.dot(p_d[4].T,p_d[4])
-    w_12_vTv = T.dot(p_d[6].T,p_d[6])
-    d_cost += reg_term_2 * (T.sum(w_12_uTu - T.identity_like(w_12_uTu)) ** 2)
-    d_cost += reg_term_3 * (T.sum(w_12_vTv - T.identity_like(w_12_vTv)) ** 2)
-
-    # d_cost += (reg_term_4 * T.sum(T.log(p_d[1])))
-
-    # d_cost += theano_print(-(reg_term_4 * T.sum(T.log(p_d[1]))), 'sv1',True)
-
-    # d_cost += -(reg_term_5 * T.sum(T.log(p_d[5])))
+    # w_01_uTu = T.dot(p_d[0].T,p_d[0])
+    # w_01_vTv = T.dot(p_d[2].T,p_d[2])
+    # d_cost += theano_print(w_01_u_reg_term * (T.sum( (w_01_uTu - T.identity_like(w_01_uTu)) **2 )), 'w_01_u_ortho', True)
+    # d_cost += theano_print(w_01_v_reg_term * (T.sum( (w_01_vTv - T.identity_like(w_01_vTv)) **2 )), 'w_01_v_ortho', True)
+    #
+    # w_12_uTu = T.dot(p_d[4].T,p_d[4])
+    # w_12_vTv = T.dot(p_d[6].T,p_d[6])
+    # d_cost += theano_print(w_12_u_reg_term * (T.sum((w_12_uTu - T.identity_like(w_12_uTu)) ** 2 )), 'w_12_u_ortho')
+    # d_cost += theano_print(w_12_v_reg_term * (T.sum((w_12_vTv - T.identity_like(w_12_vTv)) ** 2 )), 'w_12_v_ortho')
+    #
+    # d_cost += theano_print((sv1_reg_term * T.sum((p_d[1] ** 2))), 'sv1')
+    #
+    # d_cost += theano_print((sv2_reg_term * T.sum((p_d[5]))), 'sv2')
 
     g_cost = T.mean(T.nnet.binary_crossentropy(
         pred_fake, T.alloc(1, batch_size, 1)))
@@ -163,6 +161,18 @@ def get_svd_layer(in_dim, out_dim, name):
     w_v = theano.shared(v, name+'_v')
     return w_u, w_s, w_v
 
+def orthogonalize(p_d):
+    w_01 = p_d[0].get_value().dot(p_d[1].get_value().dot(p_d[2].get_value()))
+    u_hat, s_hat, v_hat = np.linalg.svd(w_01, full_matrices=0)
+    p_d[0].set_value(u_hat)
+    p_d[1].set_value(np.diag(s_hat))
+    p_d[2].set_value(v_hat)
+
+    w_12 = p_d[4].get_value().dot(p_d[5].get_value().dot(p_d[6].get_value()))
+    u_hat, s_hat, v_hat = np.linalg.svd(w_12, full_matrices=0)
+    p_d[4].set_value(u_hat)
+    p_d[5].set_value(np.diag(s_hat))
+    p_d[6].set_value(v_hat)
 
 def test_gan():
     noise, fake, real, p_g, p_d, g_cost, d_cost, x, pred_x = gan()
@@ -217,15 +227,13 @@ def test_gan():
             grads_ = res[1:]
             grads_norm = [np.sqrt(np.sum(np.array(g) ** 2)) for g in grads_]
 
-            print "d_cost: ", d_costs[-1]
-            print "grads norm", grads_norm, "\n\n"
+            # print "d_cost: ", d_costs[-1]
+            # print "grads norm: ", grads_norm, "\n\n"
 
             for j in range(5):
                 g_costs += [train_g(noise_)]
             if (i + 1) % decomposition_freq == 0:
-                pass
-                # decompose_d_weights()
-                # print "decomposing (updating) discriminator weights"
+                orthogonalize(p_d)
 
 
         if epoch % 1 == 0:
@@ -236,16 +244,10 @@ def test_gan():
             d_sv_w01.append(np.diag(p_d[1].get_value()))
             d_sv_w12.append(np.diag(p_d[5].get_value()))
             d_sv_w23.append(np.diag(p_d[5].get_value()))
-            #
-            # try:
-            # g_sv_w01.append(np.linalg.svd(p_g[0].get_value(), full_matrices=0)[1])
-            # g_sv_w12.append(np.linalg.svd(p_g[2].get_value(), full_matrices=0)[1])
-            # g_sv_w23.append(np.linalg.svd(p_g[4].get_value(), full_matrices=0)[1])
-            # except np.linalg.linalg.LinAlgError as e:
-            #     print e
-            g_sv_w01.append(np.zeros(min(p_g[0].get_value().shape)))
-            g_sv_w12.append(np.zeros(min(p_g[2].get_value().shape)))
-            g_sv_w23.append(np.zeros(min(p_g[4].get_value().shape)))
+
+            g_sv_w01.append(np.linalg.svd(p_g[0].get_value(), full_matrices=0)[1])
+            g_sv_w12.append(np.linalg.svd(p_g[2].get_value(), full_matrices=0)[1])
+            g_sv_w23.append(np.linalg.svd(p_g[4].get_value(), full_matrices=0)[1])
 
 
         if epoch % 10 == 0:
